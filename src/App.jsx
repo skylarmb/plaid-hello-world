@@ -17,7 +17,7 @@ function App() {
     setLoading(false);
   }, []);
 
-  const onSuccess = useCallback(async (publicToken, metadata) => {
+  const onSuccess = useCallback(async (publicToken) => {
     setLoading(true);
     await api.exchangePublicToken(publicToken);
     const data = await api.getTransactions();
@@ -30,19 +30,27 @@ function App() {
     createToken();
   }, [createToken]);
 
+  const { open, ready } = usePlaidLink({
+    token,
+    onSuccess,
+  });
+
   return (
     <div className="App">
       <h3>Plaid Hello World</h3>
       {loading && <div className="spinner"></div>}
 
       {!loading && data == null && (
-        <PlaidLink token={token} onSuccess={onSuccess} />
+        <Button onClick={() => open()} disabled={!ready}>
+          Link account
+        </Button>
       )}
 
       {!loading &&
         data != null &&
-        Object.entries(data).map((entry) => (
+        Object.entries(data).map((entry, i) => (
           <CodeBlockHighlighted
+            key={i}
             title={entry[0]}
             code={JSON.stringify(entry[1], null, 2)}
             lang="json"
@@ -50,22 +58,6 @@ function App() {
           />
         ))}
     </div>
-  );
-}
-
-// Because we cant use the usePlaidLink hook until we have a link_token,
-// PlaidLink needs to be its own component due to
-// https://reactjs.org/docs/hooks-rules.html#only-call-hooks-at-the-top-level
-function PlaidLink({ token, onSuccess }) {
-  const { open, ready, error } = usePlaidLink({
-    token,
-    onSuccess,
-  });
-
-  return (
-    <Button onClick={() => open()} disabled={!ready}>
-      Link account
-    </Button>
   );
 }
 
