@@ -1,18 +1,34 @@
+/*
+server.js – Configures the Plaid client and uses Express to defines routes that call Plaid endpoints in the Sandbox environment.
+Utilizes the official Plaid node.js client library to make calls to the Plaid API.
+*/
+
 require("dotenv").config();
 const express = require("express");
-const moment = require("moment");
 const bodyParser = require("body-parser");
 const session = require("express-session");
-const app = express();
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
+const path = require("path");
+const app = express();
 
 app.use(
-  // TODO: use a real secret key
-  session({ secret: "keyboard cat", saveUninitialized: true, resave: true })
+  // FOR DEMO PURPOSES ONLY
+  // Use an actual secret key in production
+  session({ secret: "bosco", saveUninitialized: true, resave: true })
 );
 
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+app.get("/", async (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.get("/oauth", async (req, res) => {
+  res.sendFile(path.join(__dirname, "oauth.html"));
+});
+
+// Configuration for the Plaid client
 const config = new Configuration({
   basePath: PlaidEnvironments[process.env.PLAID_ENV],
   baseOptions: {
@@ -24,53 +40,49 @@ const config = new Configuration({
   },
 });
 
+//Instantiate the Plaid client with the configuration
 const client = new PlaidApi(config);
 
-const formatDate = (date) => date.toISOString().split("T")[0]; // Date to ISO 8601 format
-
-// create a link_token for use in Plaid Link
+//Creates a Link token and return it
 app.get("/api/create_link_token", async (req, res, next) => {
   const tokenResponse = await client.linkTokenCreate({
     user: { client_user_id: req.sessionID },
-    client_name: "Plaid Hello World",
+    client_name: "Plaid's Tiny Quickstart",
     language: "en",
-    products: ["transactions"],
-    country_codes: ["US", "CA"],
+    products: ["auth"],
+    country_codes: ["US"],
+    redirect_uri: process.env.PLAID_SANDBOX_REDIRECT_URI,
   });
   res.json(tokenResponse.data);
 });
 
-// exchange the public_token from Plaid Link for an access_token
+// Exchanges the public token from Plaid Link for an access token
 app.post("/api/exchange_public_token", async (req, res, next) => {
   const exchangeResponse = await client.itemPublicTokenExchange({
     public_token: req.body.public_token,
   });
 
-  // TODO: store access_token in DB instead of session storage
+  // FOR DEMO PURPOSES ONLY
+  // Store access_token in DB instead of session storage
   req.session.access_token = exchangeResponse.data.access_token;
   res.json(true);
 });
 
-// get some Transactions, Auth, and Balance data from the Plaid API
-app.get("/api/data", async (req, response, next) => {
+// Fetches balance data using the Node client library for Plaid
+app.get("/api/balance", async (req, res, next) => {
   const access_token = req.session.access_token;
-  const startDate = moment().subtract(30, "days").format("YYYY-MM-DD");
-  const endDate = moment().format("YYYY-MM-DD");
-
-  const transactionsResponse = await client.transactionsGet({
-    start_date: startDate,
-    end_date: endDate,
-    access_token,
-  });
-
-  const authResponse = await client.authGet({ access_token });
-
   const balanceResponse = await client.accountsBalanceGet({ access_token });
-  response.json({
-    Transactions: transactionsResponse.data,
-    Auth: authResponse.data,
+  res.json({
     Balance: balanceResponse.data,
   });
+});
+
+// Checks whether the user's account is connected, called
+// in App.tsx when redirected from oauth
+app.get("/api/is_account_connected", async (req, res, next) => {
+  return req.session.access_token
+    ? res.json({ status: true })
+    : res.json({ status: false });
 });
 
 app.listen(process.env.PORT || 8080);
