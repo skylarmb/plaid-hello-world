@@ -8,9 +8,17 @@ function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const createLinkToken = React.useCallback(async () => {
+    const response = await fetch("/api/create_link_token", {
+      method: "GET",
+    });
+    const data = await response.json();
+    setToken(data.link_token);
+  }, [setToken]);
+
   const onSuccess = useCallback(async (publicToken) => {
     setLoading(true);
-    const response = await fetch("/api/exchange_public_token", {
+    await fetch("/api/exchange_public_token", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -21,16 +29,11 @@ function App() {
     await getBalance();
   }, []);
 
-  const createLinkToken = React.useCallback(async () => {
-    const response = await fetch("/api/create_link_token", {});
-
-    const data = await response.json();
-    setToken(data.link_token);
-  }, [setToken]);
-
   const getBalance = React.useCallback(async () => {
     setLoading(true);
-    const response = await fetch("/api/balance", {});
+    const response = await fetch("/api/balance", {
+      method: "GET",
+    });
 
     const data = await response.json();
     setData(data);
@@ -53,8 +56,8 @@ function App() {
 
   // get status on app load, which either creates a link token or gets balance
   React.useEffect(() => {
-    getStatus();
-  }, [getStatus]);
+    createLinkToken();
+  }, [createLinkToken]);
 
   const { open, ready } = usePlaidLink({
     token,
