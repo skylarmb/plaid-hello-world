@@ -8,6 +8,18 @@
   animation: rotating 1.2s infinite cubic-bezier(0.785, 0.135, 0.15, 0.86);
 }
 
+button {
+  border: 1px solid black;
+  border-radius: 5px;
+  background: black;
+  height: 48px;
+  width: 155px;
+  margin-top: 20;
+  margin-left: 20;
+  color: white;
+  font-size: 18px;
+}
+
 @keyframes rotating {
   100% {
     transform: rotate(360deg);

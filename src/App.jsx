@@ -1,20 +1,11 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { usePlaidLink } from "react-plaid-link";
-
 import "./App.scss";
 
-function App() {
+export default function App(props) {
   const [token, setToken] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const createLinkToken = React.useCallback(async () => {
-    const response = await fetch("/api/create_link_token", {
-      method: "GET",
-    });
-    const data = await response.json();
-    setToken(data.link_token);
-  }, [setToken]);
 
   const onSuccess = useCallback(async (publicToken) => {
     setLoading(true);
@@ -29,16 +20,21 @@ function App() {
     await getBalance();
   }, []);
 
+  const createLinkToken = React.useCallback(async () => {
+    const response = await fetch("/api/create_link_token", {});
+    const data = await response.json();
+    setToken(data.link_token);
+    localStorage.setItem("link_token", data.link_token);
+  }, [setToken]);
+
   const getBalance = React.useCallback(async () => {
     setLoading(true);
-    const response = await fetch("/api/balance", {
-      method: "GET",
-    });
-
+    const response = await fetch("/api/balance", {});
     const data = await response.json();
     setData(data);
     setLoading(false);
   }, [setData, setLoading]);
+
 
   // check if we already connected an item
   const getStatus = React.useCallback(async () => {
@@ -55,20 +51,29 @@ function App() {
   }, [getBalance, setLoading, createLinkToken]);
 
   // get status on app load, which either creates a link token or gets balance
-  React.useEffect(() => {
-    createLinkToken();
-  }, [createLinkToken]);
+  useEffect(() => {
+    getStatus();
+    console.log(props.isOauth);
+  }, [getStatus, props.isOauth]);
 
-  const { open, ready } = usePlaidLink({
+  const config = {
     token,
     onSuccess,
-  });
+  };
 
+  if (props.isOauth) {
+    config.receivedRedirectUri = window.location.href;
+  }
+  
+  const { open, ready } = usePlaidLink(config);
+  
   return (
     <div>
+    
       {!loading && data == null && (
-        <button onClick={() => open()} disabled={!ready}>
-          Link account
+        <button onClick={() => open()
+        } disabled={!ready}>
+          <strong>Link account</strong>
         </button>
       )}
 
@@ -78,9 +83,9 @@ function App() {
           <pre key={i}>
             <code>{JSON.stringify(entry[1], null, 2)}</code>
           </pre>
-        ))}
+        )
+      )}
+        
     </div>
   );
 }
-
-export default App;
