@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Route, Routes } from 'react-router-dom';
+import { Route, Switch, withRouter } from 'react-router-dom';
 import OAuth from './OAuth';
 import { usePlaidLink } from "react-plaid-link";
 import "./App.scss";
@@ -71,9 +71,9 @@ function App(props) {
   
   return (
     <div>
-      <Routes>
+      <Switch>
         <Route path="/oauth" component={OAuth} />
-      </Routes>
+      </Switch>
 
       {!loading && data == null && (
         <button onClick={() => open()
@@ -94,4 +94,4 @@ function App(props) {
   );
 }
 
-export default (App);
+export default withRouter(App);
