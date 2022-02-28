@@ -2,8 +2,6 @@ import React, { useEffect, useState} from 'react';
 import App from './App';
 
 const OAuth = () => {
-  console.log(App);
-  console.log("sadkahsdhsadhada");
   const [token, setToken] = useState(null);
 
   // The Link token from the first Link initialization
