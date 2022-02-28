@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Route, Switch, withRouter } from 'react-router-dom';
+import OAuth from './OAuth';
 import { usePlaidLink } from "react-plaid-link";
 import "./App.scss";
 
-export default function App(props) {
+function App(props) {
   const [token, setToken] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,10 @@ export default function App(props) {
   
   return (
     <div>
-    
+      <Switch>
+        <Route path="/oauth" component={OAuth} />
+      </Switch>
+      
       {!loading && data == null && (
         <button onClick={() => open()
         } disabled={!ready}>
@@ -85,7 +90,8 @@ export default function App(props) {
           </pre>
         )
       )}
-        
     </div>
   );
 }
+
+export default withRouter(App);
